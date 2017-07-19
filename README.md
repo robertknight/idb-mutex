@@ -44,6 +44,11 @@ mu.lock().then(() => {
 });
 ```
 
+## API
+
+See [the type definitions](https://unpkg.com/idb-mutex/dist/index.d.ts) for full
+details of the API of the module.
+
 ## Implementation
 
 There are a number of other libraries that provide similar locks. However, they
