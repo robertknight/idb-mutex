@@ -1,0 +1,18 @@
+<html>
+  <body>
+    <h1>idb-mutex test</h1>
+    <p>Click the "Lock" and "Unlock" buttons to acquire and release the
+    lock. Try opening this page in multiple tabs, switching between them and
+    clicking Lock/Unlock. Only one tab should be able to acquire the lock at any
+    time.</p>
+    <p>
+    <b><span id="lockState"></span></b>
+    </p>
+    <button id="lockBtn">Lock</button>
+    <button id="unlockBtn">Unlock</button>
+    <script>var exports = {}</script>
+    <script src="../dist/index.js"></script>
+    <script>var Mutex = exports.default;</script>
+    <script src="demo.js"></script>
+  </body>
+</html>
