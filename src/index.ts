@@ -44,7 +44,9 @@ export default class Mutex {
    *   can hold a mutex with a given `name` at any time.
    */
   constructor(dbName: string, name: string, options?: Options) {
-    const openReq = indexedDB.open(dbName);
+    // nb. The DB version is explicitly specified as otherwise IE 11 fails to
+    // run the `onupgradeneeded` handler.
+    const openReq = indexedDB.open(dbName, 1);
 
     this._db = new Promise((resolve, reject) => {
       openReq.onupgradeneeded = () => {
