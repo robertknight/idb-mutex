@@ -1,22 +1,22 @@
-const m = new Mutex('testapp', 'thelock');
+var m = new Mutex('testapp', 'thelock');
 
-const lockStateEl = document.querySelector('#lockState');
-const lockEl = document.querySelector('#lockBtn');
-lockBtn.addEventListener('click', () => {
+var lockStateEl = document.querySelector('#lockState');
+var lockEl = document.querySelector('#lockBtn');
+lockBtn.addEventListener('click', function () {
   lockStateEl.textContent = 'Locking...';
-  m.lock().then(() => {
+  m.lock().then(function () {
     lockStateEl.textContent = 'Got lock';
-  }).catch(err => {
-    lockStateEl.textContent = `Error acquiring lock: ${err.toString()}`;
+  }).catch(function (err) {
+    lockStateEl.textContent = 'Error acquiring lock: ' + err.toString();
   });
 });
 
-const unlockEl = document.querySelector('#unlockBtn');
-unlockEl.addEventListener('click', () => {
+var unlockEl = document.querySelector('#unlockBtn');
+unlockEl.addEventListener('click', function () {
   lockStateEl.textContent = 'Unlocking...';
-  m.unlock().then(() => {
+  m.unlock().then(function () {
     lockStateEl.textContent = 'Unlocked';
-  }).catch(err => {
-    lockStateEl.textContent = `Error unlocking: ${err.toString()}`;
+  }).catch(function (err) {
+    lockStateEl.textContent = 'Error unlocking: ' + err.toString();
   });
 });
