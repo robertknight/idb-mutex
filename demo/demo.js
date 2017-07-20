@@ -1,4 +1,4 @@
-var m = new Mutex('testapp', 'thelock');
+var m = new Mutex('thelock');
 
 var lockStateEl = document.querySelector('#lockState');
 var lockEl = document.querySelector('#lockBtn');
