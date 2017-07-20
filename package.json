@@ -1,6 +1,6 @@
 {
   "name": "idb-mutex",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Mutex for cross-tab coordination. Implemented using IndexedDB.",
   "main": "dist/index.js",
   "repository": "https://github.com/robertknight/idb-mutex.git",
