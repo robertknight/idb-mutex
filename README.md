@@ -58,6 +58,9 @@ Using arguments to the `Mutex` constructor, you can customize:
    expiration prevents frozen or closed browser tabs from holding locks
    indefinitely.
 
+ - How long `Mutex#lock` waits between attempts to lock if the lock is
+   contended.
+
 ## Implementation
 
 There are a number of other libraries that provide similar locks. However, they

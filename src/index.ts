@@ -35,6 +35,16 @@ export interface Options {
    * Defaults to 'mutexes'.
    */
   objectStoreName?: string;
+
+  /**
+   * The amount of time to wait in ms between attempts to lock if the lock is
+   * contended.
+   *
+   * Note that `lock()` does not spin at all if the lock is not currently held.
+   *
+   * Defaults to 50ms.
+   */
+  spinDelay?: number;
 }
 
 /**
@@ -46,6 +56,7 @@ export default class Mutex {
   private _name: string;
   private _id: string;
   private _expiry: number;
+  private _spinDelay: number;
 
   /**
    * Initialize the mutex.
@@ -68,6 +79,7 @@ export default class Mutex {
     this._db = db || this._initDb(this._objectStoreName);
     this._name = name;
     this._expiry = (options && options.expiry) ? options.expiry : DEFAULT_EXPIRY;
+    this._spinDelay = (options && options.spinDelay) ? options.spinDelay : 50;
   }
 
   /**
@@ -88,7 +100,7 @@ export default class Mutex {
       if (await this._tryLock()) {
         break;
       }
-      await delay(250);
+      await delay(this._spinDelay);
     }
   }
 

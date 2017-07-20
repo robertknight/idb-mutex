@@ -38,27 +38,58 @@ describe('Mutex', () => {
       return mu.lock();
     });
 
-    it('waits if the lock is contended', () => {
-      const muA = new Mutex('bar');
-      const muB = new Mutex('bar');
+    [{
+      lockName: 'contend1',
+      unlockDelay: 10,
+      spinDelay: null,
+      minSpinTime: 50,
+      maxSpinTime: 100,
+    },{
+      lockName: 'contend2',
+      unlockDelay: 10,
+      spinDelay: 5,
+      minSpinTime: 5,
+      maxSpinTime: 25,
+    }].forEach(({ lockName, unlockDelay, spinDelay, minSpinTime, maxSpinTime }) => {
+      it('waits if the lock is contended', () => {
 
-      var events = [];
-      return muA.lock().then(() => {
-        events.push('lock-a');
+        let opts = {};
+        if (spinDelay) {
+          opts.spinDelay = spinDelay;
+        }
 
-        setTimeout(() => {
-          events.push('unlock-a');
-          muA.unlock();
-        }, 10);
-        return muB.lock();
-      }).then(() => {
-        events.push('lock-b');
+        const muA = new Mutex(lockName, null, opts);
+        const muB = new Mutex(lockName, null, opts);
 
-        assert.deepEqual(events, [
-          'lock-a',
-          'unlock-a',
-          'lock-b',
-        ]);
+        const events = [];
+        let unlockStartedAt;
+
+        return muA.lock().then(() => {
+          events.push('lock-a');
+
+          setTimeout(() => {
+            events.push('unlock-a');
+            muA.unlock();
+          }, unlockDelay);
+
+          unlockStartedAt = Date.now();
+          return muB.lock();
+        }).then(() => {
+          const unlockFinishedAt = Date.now();
+
+          events.push('lock-b');
+
+          // Check that locking `b` waited for `a`.
+          assert.deepEqual(events, [
+            'lock-a',
+            'unlock-a',
+            'lock-b',
+          ]);
+
+          // Check how long we spent spinning.
+          assert.isAbove(unlockFinishedAt - unlockStartedAt, minSpinTime);
+          assert.isBelow(unlockFinishedAt - unlockStartedAt, maxSpinTime);
+        });
       });
     });
 
