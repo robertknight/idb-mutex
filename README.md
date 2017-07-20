@@ -29,7 +29,7 @@ import Mutex from 'idb-mutex'
 // and the name of the lock.
 // Only one tab will be able to lock a mutex with a given database name
 // and mutex name at any time.
-const mu = new Mutex('myapp', 'mylock');
+const mu = new Mutex('mylock');
 
 mu.lock().then(() => {
   // This code will only be executed by one browser tab at a time.

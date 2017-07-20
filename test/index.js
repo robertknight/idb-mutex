@@ -13,6 +13,15 @@ function promisifyRequest(req) {
   });
 }
 
+function createDatabase(dbName, storeName) {
+  const dbReq = indexedDB.open(dbName, 1);
+  dbReq.onupgradeneeded = () => {
+    const db = dbReq.result;
+    db.createObjectStore(storeName);
+  };
+  return promisifyRequest(dbReq);
+}
+
 describe('Mutex', () => {
   // Fake timers, if used by current test.
   let clock;
@@ -25,13 +34,13 @@ describe('Mutex', () => {
 
   describe('#lock', () => {
     it('locks immediately if uncontended', () => {
-      const mu = new Mutex('test', 'foo');
+      const mu = new Mutex('foo');
       return mu.lock();
     });
 
     it('waits if the lock is contended', () => {
-      const muA = new Mutex('test', 'bar');
-      const muB = new Mutex('test', 'bar');
+      const muA = new Mutex('bar');
+      const muB = new Mutex('bar');
 
       var events = [];
       return muA.lock().then(() => {
@@ -57,8 +66,8 @@ describe('Mutex', () => {
       var nativeSetInterval = setInterval;
       clock = sinon.useFakeTimers();
 
-      const muA = new Mutex('test', 'baz');
-      const muB = new Mutex('test', 'baz');
+      const muA = new Mutex('baz');
+      const muB = new Mutex('baz');
 
       // fake-indexeddb use timeouts internally.
       // Increment the fake clock regularly to fire those.
@@ -74,7 +83,7 @@ describe('Mutex', () => {
     });
 
     it('locks immediately if already locked', () => {
-      const mu = new Mutex('test', 'wibble');
+      const mu = new Mutex('wibble');
       return mu.lock().then(() => {
         return mu.lock();
       });
@@ -83,7 +92,7 @@ describe('Mutex', () => {
 
   describe('#unlock', () => {
     it('unlocks a locked mutex', () => {
-      const mu = new Mutex('test', 'unlock');
+      const mu = new Mutex('unlock');
       return mu.lock().then(() => {
         return mu.unlock();
       }).then(() => {
@@ -94,8 +103,28 @@ describe('Mutex', () => {
     });
 
     it('does nothing if the mutex is already unlocked', () => {
-      const mu = new Mutex('test', 'unlock2');
+      const mu = new Mutex('unlock2');
       return mu.unlock();
+    });
+  });
+
+  context('when an existing database is provided', () => {
+    it('uses the existing database', () => {
+      const db = createDatabase('newdb', 'locks');
+      const mu = new Mutex('foo', db, { objectStoreName: 'locks' });
+      return mu.lock().then(() => {
+        return db;
+      }).then(db => {
+        // Read lock object from store and check that it was stored in the
+        // expected place.
+        const tx = db.transaction('locks');
+        const store = tx.objectStore('locks');
+        return promisifyRequest(store.get('foo'));
+      }).then(lockInfo => {
+        assert.isObject(lockInfo);
+        assert.isString(lockInfo.owner);
+        assert.isAbove(lockInfo.expiresAt, Date.now());
+      });
     });
   });
 });

@@ -2,8 +2,7 @@ function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const DEFAULT_EXPIRY = 10 * 1000;
-const LOCK_OBJSTORE_NAME = 'mutexes';
+export const DEFAULT_EXPIRY = 10 * 1000;
 
 /**
  * The struct written to IDB holding details of the lock's current owner.
@@ -22,8 +21,20 @@ export interface Options {
    * This delay exists to ensure that locks held by tabs which have since been
    * closed or are frozen (eg. for performance reasons) do not prevent other
    * tabs from acquiring the lock.
+   *
+   * Defaults to DEFAULT_EXPIRY
    */
   expiry?: number;
+
+  /**
+   * The name of the object store in the database to use.
+   *
+   * If an existing database is passed to the constructor, that database must
+   * have an object store of this name.
+   *
+   * Defaults to 'mutexes'.
+   */
+  objectStoreName?: string;
 }
 
 /**
@@ -31,38 +42,46 @@ export interface Options {
  */
 export default class Mutex {
   private _db: Promise<IDBDatabase>;
+  private _objectStoreName: string;
   private _name: string;
   private _id: string;
-  private _opts: Options;
+  private _expiry: number;
 
   /**
    * Initialize the mutex.
    *
-   * @param dbName - Name of the IndexedDB database to use.
-   * @param name - Name of the mutex. Only one instance of a
-   *   a mutex, across all documents using the same origin and `dbName`
-   *   can hold a mutex with a given `name` at any time.
+   * @param name - Name of the mutex.
+   * @param db - Existing database to use. If null, an IndexedDB database named
+   *   'idb-mutex' is created. If an existing database is provided it must have
+   *   an object store name matching `options.objectStoreName`.
+   * @param options
    */
-  constructor(dbName: string, name: string, options?: Options) {
+  constructor(name: string, db?: Promise<IDBDatabase>|null, options?: Options) {
+    // Generate a good-enough random identifier for this instance.
+    this._id = Math.round(Math.random() * 10000).toString();
+
+    this._objectStoreName = 'mutexes';
+    if (options && options.objectStoreName) {
+      this._objectStoreName = options.objectStoreName;
+    }
+
+    this._db = db || this._initDb(this._objectStoreName);
+    this._name = name;
+    this._expiry = (options && options.expiry) ? options.expiry : DEFAULT_EXPIRY;
+  }
+
+  _initDb(objectStoreName: string) {
     // nb. The DB version is explicitly specified as otherwise IE 11 fails to
     // run the `onupgradeneeded` handler.
-    const openReq = indexedDB.open(dbName, 1);
-
-    this._db = new Promise((resolve, reject) => {
+    return new Promise<IDBDatabase>((resolve, reject) => {
+      const openReq = indexedDB.open('idb-mutex', 1);
       openReq.onupgradeneeded = () => {
         const db = openReq.result;
-        db.createObjectStore(LOCK_OBJSTORE_NAME);
+        db.createObjectStore(objectStoreName);
       };
       openReq.onsuccess = () => resolve(openReq.result);
       openReq.onerror = () => reject(openReq.error);
     });
-
-    // Generate a good-enough random identifier for this instance.
-    this._id = Math.round(Math.random() * 10000).toString();
-
-    this._name = name;
-
-    this._opts = options || {};
   }
 
   /**
@@ -95,8 +114,8 @@ export default class Mutex {
    */
   async unlock() {
     const db = await this._db;
-    const tx = db.transaction(LOCK_OBJSTORE_NAME, 'readwrite');
-    const store = tx.objectStore(LOCK_OBJSTORE_NAME);
+    const tx = db.transaction(this._objectStoreName, 'readwrite');
+    const store = tx.objectStore(this._objectStoreName);
     const unlockReq = store.put({ expiresAt: 0, owner: null }, this._name);
 
     return new Promise((resolve, reject) => {
@@ -107,8 +126,8 @@ export default class Mutex {
 
   private async _tryLock() {
     const db = await this._db;
-    const tx = db.transaction(LOCK_OBJSTORE_NAME, 'readwrite');
-    const store = tx.objectStore(LOCK_OBJSTORE_NAME);
+    const tx = db.transaction(this._objectStoreName, 'readwrite');
+    const store = tx.objectStore(this._objectStoreName);
 
     // We use the `onsuccess` and `onerror` callbacks rather than writing a
     // generic request Promise-ifying function because of issues with
@@ -123,7 +142,7 @@ export default class Mutex {
         if (!lockMeta || lockMeta.owner === this._id || lockMeta.expiresAt < Date.now()) {
           const newLockMeta = {
             owner: this._id,
-            expiresAt: Date.now() + (this._opts.expiry || DEFAULT_EXPIRY),
+            expiresAt: Date.now() + this._expiry,
           };
           const writeReq = store.put(newLockMeta, this._name);
           writeReq.onsuccess = () => resolve(true);
