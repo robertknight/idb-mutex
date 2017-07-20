@@ -25,10 +25,9 @@ npm install idb-mutex
 ```js
 import Mutex from 'idb-mutex'
 
-// Create a mutex, specifying the name of the backing IndexedDB database to use,
-// and the name of the lock.
-// Only one tab will be able to lock a mutex with a given database name
-// and mutex name at any time.
+// Create a mutex, specifying the name of the lock.
+//
+// Only one tab will be able to lock a mutex with a given name at any time.
 const mu = new Mutex('mylock');
 
 mu.lock().then(() => {
@@ -48,6 +47,16 @@ mu.lock().then(() => {
 
 See [the type definitions](https://unpkg.com/idb-mutex/dist/index.d.ts) for full
 details of the API of the module.
+
+Using arguments to the `Mutex` constructor, you can customize:
+
+ - Which IndexedDB database and object store within that database is used. By
+   default a database named 'idb-mutex' with a single object store named
+   'mutexes' is created automatically.
+
+ - The time before locks acquired with `lock()` automatically expire. Automatic
+   expiration prevents frozen or closed browser tabs from holding locks
+   indefinitely.
 
 ## Implementation
 
