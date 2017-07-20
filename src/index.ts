@@ -70,20 +70,6 @@ export default class Mutex {
     this._expiry = (options && options.expiry) ? options.expiry : DEFAULT_EXPIRY;
   }
 
-  _initDb(objectStoreName: string) {
-    // nb. The DB version is explicitly specified as otherwise IE 11 fails to
-    // run the `onupgradeneeded` handler.
-    return new Promise<IDBDatabase>((resolve, reject) => {
-      const openReq = indexedDB.open('idb-mutex', 1);
-      openReq.onupgradeneeded = () => {
-        const db = openReq.result;
-        db.createObjectStore(objectStoreName);
-      };
-      openReq.onsuccess = () => resolve(openReq.result);
-      openReq.onerror = () => reject(openReq.error);
-    });
-  }
-
   /**
    * Acquire the lock.
    *
@@ -121,6 +107,20 @@ export default class Mutex {
     return new Promise((resolve, reject) => {
       unlockReq.onsuccess = () => resolve();
       unlockReq.onerror = () => reject(unlockReq.error);
+    });
+  }
+
+  private _initDb(objectStoreName: string) {
+    // nb. The DB version is explicitly specified as otherwise IE 11 fails to
+    // run the `onupgradeneeded` handler.
+    return new Promise<IDBDatabase>((resolve, reject) => {
+      const openReq = indexedDB.open('idb-mutex', 1);
+      openReq.onupgradeneeded = () => {
+        const db = openReq.result;
+        db.createObjectStore(objectStoreName);
+      };
+      openReq.onsuccess = () => resolve(openReq.result);
+      openReq.onerror = () => reject(openReq.error);
     });
   }
 
