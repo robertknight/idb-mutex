@@ -110,7 +110,7 @@ export default class Mutex {
    * Releases the lock, regardless of who currently owns it or whether it is
    * currently locked.
    */
-  async unlock() {
+  async unlock(): Promise<void> {
     const db = await this._db;
     const tx = db.transaction(this._objectStoreName, 'readwrite');
     const store = tx.objectStore(this._objectStoreName);
