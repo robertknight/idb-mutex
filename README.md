@@ -1,11 +1,10 @@
+**Update 2022-04-26: The functionality provided by this library has been superceded by the native [Web Locks API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API). This library may be useful in older browsers. See also [this issue](https://github.com/w3c/web-locks/issues/50) for Web Locks API polyfill discussions.**
+
+----
+
 # idb-mutex
 
-A mutex for coordinating activities across browser tabs, implemented using
-IndexedDB.
-
-This library requires a browser that [supports
-IndexedDB](http://caniuse.com/#feat=indexeddb) and either native Promise support
-or a polyfill.
+A mutex for coordinating activities across browser tabs, implemented using IndexedDB ([browser support](http://caniuse.com/#feat=indexeddb)).
 
 ## Introduction
 
