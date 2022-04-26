@@ -8,10 +8,10 @@
   "license": "MIT",
   "devDependencies": {
     "chai": "^4.1.0",
-    "fake-indexeddb": "^2.0.3",
-    "mocha": "^3.4.2",
-    "sinon": "^2.3.8",
-    "typescript": "^2.4.1"
+    "fake-indexeddb": "^3.1.7",
+    "mocha": "^9.2.2",
+    "sinon": "^13.0.2",
+    "typescript": "^4.6.3"
   },
   "scripts": {
     "build": "tsc",
